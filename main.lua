@@ -1,3 +1,4 @@
+```lua
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
@@ -245,9 +246,48 @@ function LegendUI:CreateWindow(config)
         TabBar = TabBar,
         Pages = Pages,
         _navButtons = {},
+        Watermark = nil,
     }, LegendUI)
 
     return Window
+end
+
+function LegendUI:CreateWatermark(text)
+    if self.Watermark then
+        self.Watermark:Destroy()
+        self.Watermark = nil
+    end
+
+    local Watermark = Instance.new("Frame")
+    Watermark.Name = "Watermark"
+    Watermark.AutomaticSize = Enum.AutomaticSize.X
+    Watermark.Size = UDim2.fromOffset(0, 28)
+    Watermark.Position = UDim2.new(1, -12, 0, 12)
+    Watermark.AnchorPoint = Vector2.new(1, 0)
+    Watermark.BackgroundColor3 = Theme.CardBg
+    Watermark.BorderSizePixel = 0
+    Watermark.ZIndex = 200
+    Watermark.Parent = self.ScreenGui
+
+    corner(Watermark, 6)
+    stroke(Watermark, Theme.CardStroke, 1)
+    pad(Watermark, 10, 0, 10, 0)
+
+    local Label = Instance.new("TextLabel")
+    Label.BackgroundTransparency = 1
+    Label.Size = UDim2.fromOffset(0, 28)
+    Label.AutomaticSize = Enum.AutomaticSize.X
+    Label.Font = Theme.FontBold
+    Label.TextSize = 12
+    Label.TextColor3 = Theme.TextPrimary
+    Label.TextXAlignment = Enum.TextXAlignment.Center
+    Label.Text = text or "LegendUI"
+    Label.ZIndex = 201
+    Label.Parent = Watermark
+
+    self.Watermark = Watermark
+
+    return Label
 end
 
 function LegendUI:AddNavTab(name)
@@ -1332,3 +1372,4 @@ function LegendUI._buildBox(parent, title)
 end
 
 return LegendUI
+```
