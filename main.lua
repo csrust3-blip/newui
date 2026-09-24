@@ -1180,22 +1180,170 @@ function LegendUI._buildBox(parent, title)
         }
     end
 
-    function Box:AddDropdown(text, options, default, callback)
+        function Box:AddDropdown(text, options, default, callback)
         options = options or {}
 
-        local Row = newRow(28)
+        local Row = newRow(#options > 15 and 44 or 28)
         local selected = default or options[1]
         local open = false
 
         local Label = Instance.new("TextLabel")
         Label.BackgroundTransparency = 1
-        Label.Size = UDim2.new(1, -118, 1, 0)
+        Label.Size = UDim2.new(1, -118, #options > 15 and 22 or 28, 0)
         Label.Font = Theme.Font
         Label.TextSize = 13
         Label.TextColor3 = Theme.TextPrimary
         Label.TextXAlignment = Enum.TextXAlignment.Left
         Label.Text = text
         Label.Parent = Row
+
+        if #options > 15 then
+            local selectedIndex = table.find(options, selected) or 1
+
+            local ValueLabel = Instance.new("TextLabel")
+            ValueLabel.BackgroundTransparency = 1
+            ValueLabel.Position = UDim2.new(1, -110, 0, 0)
+            ValueLabel.Size = UDim2.fromOffset(110, 22)
+            ValueLabel.Font = Theme.Font
+            ValueLabel.TextSize = 12
+            ValueLabel.TextColor3 = Theme.TextMuted
+            ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
+            ValueLabel.TextTruncate = Enum.TextTruncate.AtEnd
+            ValueLabel.Text = tostring(selected)
+            ValueLabel.Parent = Row
+
+            local Track = Instance.new("Frame")
+            Track.Position = UDim2.fromOffset(0, 28)
+            Track.Size = UDim2.new(1, 0, 0, 4)
+            Track.BackgroundColor3 = Theme.ToggleOff
+            Track.BorderSizePixel = 0
+            Track.Parent = Row
+
+            corner(Track, 2)
+
+            local Fill = Instance.new("Frame")
+            Fill.Size = UDim2.fromScale(
+                #options <= 1 and 0 or (selectedIndex - 1) / (#options - 1),
+                1
+            )
+            Fill.BackgroundColor3 = Theme.TextPrimary
+            Fill.BorderSizePixel = 0
+            Fill.Parent = Track
+
+            corner(Fill, 2)
+
+            local Knob = Instance.new("TextButton")
+            Knob.Size = UDim2.fromOffset(12, 12)
+            Knob.AnchorPoint = Vector2.new(0.5, 0.5)
+            Knob.Position = UDim2.new(
+                #options <= 1 and 0 or (selectedIndex - 1) / (#options - 1),
+                0,
+                0.5,
+                0
+            )
+            Knob.BackgroundColor3 = Theme.TextPrimary
+            Knob.BorderSizePixel = 0
+            Knob.Text = ""
+            Knob.AutoButtonColor = false
+            Knob.Parent = Track
+
+            corner(Knob, 6)
+
+            local dragging = false
+
+            local function setIndex(index, callCallback)
+                selectedIndex = math.clamp(
+                    math.floor(index + 0.5),
+                    1,
+                    #options
+                )
+
+                selected = options[selectedIndex]
+
+                local rel
+
+                if #options <= 1 then
+                    rel = 0
+                else
+                    rel = (selectedIndex - 1) / (#options - 1)
+                end
+
+                Knob.Position = UDim2.new(
+                    rel,
+                    0,
+                    0.5,
+                    0
+                )
+
+                Fill.Size = UDim2.fromScale(
+                    rel,
+                    1
+                )
+
+                ValueLabel.Text = tostring(selected)
+
+                if callCallback and callback then
+                    callback(selected)
+                end
+            end
+
+            local function updateFromMouse()
+                if #options <= 1 then
+                    setIndex(1, true)
+                    return
+                end
+
+                local rel = math.clamp(
+                    (UserInputService:GetMouseLocation().X - Track.AbsolutePosition.X)
+                    / Track.AbsoluteSize.X,
+                    0,
+                    1
+                )
+
+                local index = 1 + rel * (#options - 1)
+
+                setIndex(index, true)
+            end
+
+            Knob.MouseButton1Down:Connect(function()
+                dragging = true
+            end)
+
+            Track.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = true
+                    updateFromMouse()
+                end
+            end)
+
+            UserInputService.InputChanged:Connect(function(input)
+                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                    updateFromMouse()
+                end
+            end)
+
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = false
+                end
+            end)
+
+            local api = {}
+
+            function api:Set(v)
+                local index = table.find(options, v)
+
+                if index then
+                    setIndex(index, true)
+                end
+            end
+
+            function api:Get()
+                return selected
+            end
+
+            return api
+        end
 
         local DropBtn = Instance.new("TextButton")
         DropBtn.Size = UDim2.fromOffset(110, 22)
